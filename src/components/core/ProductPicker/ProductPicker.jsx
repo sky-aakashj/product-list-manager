@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useProductContext } from "../../../context/ProductContext";
 import { searchProducts } from "../../../api";
+import ProductSelectionList from "./SubComponents/ProductSelectionList/ProductSelectionList";
 import * as S from "./ProductPicker.styled";
 import searchIcon from "../../../assets/media/searchIcon.svg";
 import closeModal from "../../../assets/media/closeModal.svg";
@@ -19,20 +20,22 @@ const ProductPicker = ({ open, handleClose, handleOpenPicker }) => {
     setPage(1);
     setHasMoreData(true);
     const timerId = setTimeout(() => {
-      fetchProducts();
+      setIsLoading(true);
+      fetchProducts(1);
     }, 1000);
 
     return () => clearTimeout(timerId);
   }, [searchValue, open]);
 
   // Fetch products from API
-  const fetchProducts = async () => {
-    setIsLoading(true);
+  const fetchProducts = async (newpage) => {
     try {
-      const data = await searchProducts(searchValue, page, 10);
-      if (page === 1) {
+      const data = await searchProducts(searchValue, newpage, 10);
+      if (newpage === 1) {
+        console.log("fetched 1", data, page);
         setResponseData(data);
       } else {
+        console.log("fetched", data);
         setResponseData((prev) => [...prev, ...data]);
       }
       if (data.length < 10) setHasMoreData(false);
@@ -46,7 +49,12 @@ const ProductPicker = ({ open, handleClose, handleOpenPicker }) => {
   // Fetch new data for infinite scroll
   const fetchNewData = async () => {
     if (!hasMoreData) return;
-    setPage((prev) => prev + 1);
+    setPage((prev) => {
+      const newPage = prev + 1;
+      fetchProducts(newPage);
+      return newPage;
+    });
+    // Call fetchProducts after incrementing the page
   };
 
   // Handle add products
@@ -90,7 +98,15 @@ const ProductPicker = ({ open, handleClose, handleOpenPicker }) => {
           />
         </S.SearchBar>
         <S.HorizontalLine />
-        {/* data will be render over here */}
+        <ProductSelectionList
+          responseData={responseData}
+          handleAdd={handleAdd}
+          handleClose={handleClose}
+          setSearchValue={setSearchValue}
+          isLoading={isLoading}
+          fetchNewData={fetchNewData}
+          hasMoreData={hasMoreData}
+        />
       </S.ModalWrapper>
     </S.Backdrop>
   );
