@@ -36,16 +36,22 @@ export const CheckboxContainer = styled.div`
 `;
 
 export const ParentCheckboxContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  padding: 10px 0px 10px 30px;
-  align-items: center;
+  label {
+    display: inline-flex;
+    flex-direction: row;
+    padding: 10px 0px 10px 30px;
+    align-items: center;
+    cursor: pointer;
+  }
 
   img {
     width: 36px;
     height: 36px;
     border-radius: 4px;
     margin: 0px 10px;
+  }
+  &:hover {
+    background-color: #f5f5f5;
   }
 `;
 
@@ -55,6 +61,15 @@ export const ChildCheckboxContainer = styled.div`
   padding: 10px 30px 10px 60px;
   justify-content: space-between;
   align-items: center;
+  label {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+  }
+  &:hover {
+    background-color: #f5f5f5;
+  }
 `;
 
 export const ItemInfo = styled.div`
@@ -73,25 +88,16 @@ export const ModalFooter = styled.div`
     font-family: "SF Pro Text Light";
     font-size: 16px;
   }
-
-  div {
-    display: flex;
-    gap: 10px;
-  }
 `;
-
-export const Button = styled.button`
-  font-family: "SF Pro Text Medium";
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 8px 16px;
-  border: 1px solid #00000066;
-  background-color: ${(props) => (props.primary ? "#008060" : "transparent")};
-  color: ${(props) => (props.primary ? "#ffffff" : "#00000099")};
-
-  &:hover {
-    background-color: ${(props) => (props.primary ? "#00664d" : "#00000042")};
+export const ButtonWrapper = styled.div`
+  display: flex;
+  gap: 10px;
+  button:first-child {
+    border: 1px solid #00000066;
+    color: #00000099;
+    &:hover {
+      background-color: #00000030;
+    }
   }
 `;
 
@@ -101,7 +107,6 @@ export const Checkbox = styled.input.attrs({ type: "checkbox" })`
   margin-right: 10px;
   border-radius: 4px;
   accent-color: #008060;
-  cursor: pointer;
 
   /* Indeterminate state (minus sign) */
   &:indeterminate {

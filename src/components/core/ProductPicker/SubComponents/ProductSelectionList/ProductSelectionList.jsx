@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import placeholder from "../../../../../assets/media/placeholder.png";
 import Button from "../../../../ui/Button/Button";
@@ -15,81 +15,114 @@ const ProductSelectionList = (props) => {
     hasMoreData,
   } = props;
 
-  const [mappedData, setMappedData] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState([]);
   const [imageLoaded, setImageLoaded] = useState(false);
   const parentCheckboxRefs = useRef({});
-  console.log("Response Data:", responseData);
-  console.log("Mapped Data:", mappedData);
-  console.log("Has More Data:", hasMoreData);
+
+  // Memoized mapped data with selection preservation
+  const mappedData = useMemo(() => {
+    if (responseData == null || !responseData) return [];
+
+    return responseData.map((item) => {
+      // Find if this product was previously selected
+      const previouslySelectedProduct = selectedProducts.find(
+        (selectedProduct) => selectedProduct.id === item.id
+      );
+
+      // If previously selected, restore its selection state
+      if (previouslySelectedProduct) {
+        return {
+          ...item,
+          checkedValue: previouslySelectedProduct.checkedValue,
+          variants: item.variants.map((variant) => {
+            const previousVariant = previouslySelectedProduct.variants.find(
+              (prevVariant) => prevVariant.id === variant.id
+            );
+            return previousVariant
+              ? { ...variant, checkedValue: previousVariant.checkedValue }
+              : { ...variant, checkedValue: false };
+          }),
+        };
+      }
+
+      // If not previously selected, create a new entry
+      return {
+        id: item.id,
+        title: item.title,
+        inputValue: "",
+        selectValue: "",
+        checkedValue: false,
+        discountAdded: false,
+        toggleVariantButton: false,
+        imageSrc: item.image.src,
+        variants:
+          item.variants.length === 0
+            ? []
+            : item.variants.map((variant) => ({
+                id: variant.id,
+                title: variant.title,
+                price: variant.price,
+                inventory_quantity: variant.inventory_quantity,
+                checkedValue: false,
+                discountAdded: false,
+                inputValue: "",
+                selectValue: "",
+              })),
+      };
+    });
+  }, [responseData, selectedProducts]);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
   };
 
-  const parentProductsChecked = mappedData.filter((product) =>
-    product.variants.some((variant) => variant.checkedValue)
-  ).length;
-
-  // Map and load the data in checkboxes
-  useEffect(() => {
-    setMappedData(
-      responseData == null || !responseData
-        ? []
-        : responseData.map((item) => ({
-            id: item.id,
-            title: item.title,
-            checkedValue: false,
-            imageSrc: item.image.src,
-            variants:
-              item.variants.length === 0
-                ? []
-                : item.variants.map((variant) => ({
-                    id: variant.id,
-                    title: variant.title,
-                    price: variant.price,
-                    inventory_quantity: variant.inventory_quantity,
-                    checkedValue: false,
-                  })),
-          }))
-    );
-  }, [responseData]);
-
   // Handle the parent checkbox state change
   const handleParentChange = (parentId) => {
-    setMappedData((prevData) =>
-      prevData.map((item) => {
-        if (item.id === parentId) {
-          const newCheckedValue = !item.checkedValue;
-          return {
-            ...item,
+    const updatedSelectedProducts = mappedData.map((item) => {
+      if (item.id === parentId) {
+        const newCheckedValue = !item.checkedValue;
+        return {
+          ...item,
+          checkedValue: newCheckedValue,
+          variants: item.variants.map((variant) => ({
+            ...variant,
             checkedValue: newCheckedValue,
-            variants: item.variants.map((variant) => ({
-              ...variant,
-              checkedValue: newCheckedValue,
-            })),
-          };
-        }
-        return item;
-      })
+          })),
+        };
+      }
+      return item;
+    });
+
+    setSelectedProducts(
+      updatedSelectedProducts.filter((product) =>
+        product.variants.some((variant) => variant.checkedValue)
+      )
     );
   };
 
   // Handle the child checkbox state change
   const handleChildCheckbox = (parentId, childId) => {
-    setMappedData((prevData) =>
-      prevData.map((item) => {
-        if (item.id === parentId) {
-          return {
-            ...item,
-            variants: item.variants.map((variant) =>
-              variant.id === childId
-                ? { ...variant, checkedValue: !variant.checkedValue }
-                : variant
-            ),
-          };
-        }
-        return item;
-      })
+    const updatedSelectedProducts = mappedData.map((item) => {
+      if (item.id === parentId) {
+        const updatedVariants = item.variants.map((variant) =>
+          variant.id === childId
+            ? { ...variant, checkedValue: !variant.checkedValue }
+            : variant
+        );
+
+        return {
+          ...item,
+          variants: updatedVariants,
+          checkedValue: updatedVariants.some((v) => v.checkedValue),
+        };
+      }
+      return item;
+    });
+
+    setSelectedProducts(
+      updatedSelectedProducts.filter((product) =>
+        product.variants.some((variant) => variant.checkedValue)
+      )
     );
   };
 
@@ -117,6 +150,8 @@ const ProductSelectionList = (props) => {
       }
     });
   }, [mappedData]);
+
+  const parentProductsChecked = selectedProducts.length;
 
   return (
     <>
@@ -148,22 +183,26 @@ const ProductSelectionList = (props) => {
                 {mappedData.map((item, index) => (
                   <S.CheckboxContainer key={index}>
                     <S.ParentCheckboxContainer>
-                      <S.Checkbox
-                        ref={(el) => (parentCheckboxRefs.current[item.id] = el)}
-                        checked={allChildrenChecked(item.id)}
-                        onChange={() => handleParentChange(item.id)}
-                      />
-                      <img
-                        src={
-                          imageLoaded && item.imageSrc
-                            ? `${item.imageSrc}&width=36&height=36`
-                            : placeholder
-                        }
-                        alt="product-image"
-                        onLoad={handleImageLoad}
-                        loading="lazy"
-                      />
-                      <span>{item.title}</span>
+                      <label>
+                        <S.Checkbox
+                          ref={(el) =>
+                            (parentCheckboxRefs.current[item.id] = el)
+                          }
+                          checked={allChildrenChecked(item.id)}
+                          onChange={() => handleParentChange(item.id)}
+                        />
+                        <img
+                          src={
+                            imageLoaded && item.imageSrc
+                              ? `${item.imageSrc}&width=36&height=36`
+                              : placeholder
+                          }
+                          alt="product-image"
+                          onLoad={handleImageLoad}
+                          loading="lazy"
+                        />
+                        <span>{item.title}</span>
+                      </label>
                     </S.ParentCheckboxContainer>
                     <hr />
                     {item.variants.map((element, variantIndex) => (
@@ -198,8 +237,9 @@ const ProductSelectionList = (props) => {
         <span>{`${parentProductsChecked} ${
           parentProductsChecked === 1 ? "product" : "products"
         } selected`}</span>
-        <div>
+        <S.ButtonWrapper>
           <Button
+            size="medium"
             variant="secondary"
             onClick={() => {
               setSearchValue("");
@@ -209,6 +249,7 @@ const ProductSelectionList = (props) => {
             Cancel
           </Button>
           <Button
+            size="medium"
             variant="primary"
             onClick={() => {
               if (!parentProductsChecked) {
@@ -216,13 +257,13 @@ const ProductSelectionList = (props) => {
                 return;
               } else {
                 setSearchValue("");
-                handleAdd(mappedData);
+                handleAdd(selectedProducts);
               }
             }}
           >
             Add
           </Button>
-        </div>
+        </S.ButtonWrapper>
       </S.ModalFooter>
     </>
   );

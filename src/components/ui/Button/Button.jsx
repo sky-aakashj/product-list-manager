@@ -1,8 +1,13 @@
 import * as S from "./Button.styled";
 
-const Button = ({ children, variant = "primary", ...props }) => {
+const Button = ({
+  children,
+  size = "small",
+  variant = "primary",
+  ...props
+}) => {
   return (
-    <S.StyledButton variant={variant} {...props}>
+    <S.StyledButton variant={variant} size={size} {...props}>
       {children}
     </S.StyledButton>
   );

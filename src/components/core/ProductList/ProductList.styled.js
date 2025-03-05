@@ -1,24 +1,27 @@
 import styled from "styled-components";
 
+export const HeaderWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-left: 80px;
+  gap: 166px;
+`;
 export const ProductListContainer = styled.div`
   position: absolute;
-  width: 64.9%;
+  width: 70%;
   height: 86%;
   top: 75px;
   left: 253px;
-
-  products {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    margin-bottom: 20px;
-  }
 `;
+
 export const ButtonWrapper = styled.div`
   width: 450px;
-  text-align: end;
+  text-align: -webkit-right;
   margin-top: 20px;
-  button {
-    margin-right: 10px;
-  }
+  padding-bottom: 60px;
+`;
+
+export const ProductItemWrapper = styled.div`
+  width: fit-content;
 `;

@@ -6,7 +6,7 @@ import * as S from "./ProductPicker.styled";
 import searchIcon from "../../../assets/media/searchIcon.svg";
 import closeModal from "../../../assets/media/closeModal.svg";
 
-const ProductPicker = ({ open, handleClose, handleOpenPicker }) => {
+const ProductPicker = ({ open, handleClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [responseData, setResponseData] = useState([]);
@@ -32,10 +32,8 @@ const ProductPicker = ({ open, handleClose, handleOpenPicker }) => {
     try {
       const data = await searchProducts(searchValue, newpage, 10);
       if (newpage === 1) {
-        console.log("fetched 1", data, page);
         setResponseData(data);
       } else {
-        console.log("fetched", data);
         setResponseData((prev) => [...prev, ...data]);
       }
       if (data.length < 10) setHasMoreData(false);
@@ -61,7 +59,7 @@ const ProductPicker = ({ open, handleClose, handleOpenPicker }) => {
   const handleAdd = (mappedData) => {
     if (mappedData && mappedData.length > 0) {
       updateProducts(mappedData);
-      handleOpenPicker(false);
+      handleClose(false);
     }
   };
 
